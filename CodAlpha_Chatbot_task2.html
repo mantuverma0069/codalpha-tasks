@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI FAQ Chatbot - CodeAlpha</title>
+    <style>
+        :root {
+            --primary-color: #0ea5e9;
+            --primary-hover: #0284c7;
+            --bg-color: #f1f5f9;
+            --chat-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            --user-msg: #0ea5e9;
+            --bot-msg: #f8fafc;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            padding: 20px;
+        }
+
+        .chat-container {
+            background: var(--chat-bg);
+            width: 100%;
+            max-width: 500px;
+            height: 85vh;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .chat-header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .chat-header h1 {
+            font-size: 1.4rem;
+            font-weight: 600;
+        }
+
+        .chat-header p {
+            font-size: 0.85rem;
+            opacity: 0.9;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            background-color: #fafafa;
+        }
+
+        .message {
+            max-width: 80%;
+            padding: 12px 16px;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            line-height: 1.4;
+            word-wrap: break-word;
+        }
+
+        .message.bot {
+            background-color: var(--bot-msg);
+            color: var(--text-main);
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+            border: 1px solid var(--border-color);
+        }
+
+        .message.user {
+            background-color: var(--user-msg);
+            color: white;
+            align-self: flex-end;
+            border-bottom-right-radius: 4px;
+        }
+
+        .typing-indicator {
+            display: none;
+            align-self: flex-start;
+            background-color: var(--bot-msg);
+            padding: 12px 16px;
+            border-radius: 12px;
+            border-bottom-left-radius: 4px;
+            border: 1px solid var(--border-color);
+        }
+
+        .dots {
+            display: flex;
+            gap: 4px;
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            background-color: var(--text-muted);
+            border-radius: 50%;
+            animation: bounce 1.4s infinite ease-in-out both;
+        }
+
+        .dot:nth-child(1) { animation-delay: -0.32s; }
+        .dot:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1.0); }
+        }
+
+        .chat-input-area {
+            padding: 15px;
+            background-color: var(--chat-bg);
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            gap: 10px;
+        }
+
+        .chat-input-area input {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            outline: none;
+            font-size: 0.95rem;
+            transition: border-color 0.2s;
+        }
+
+        .chat-input-area input:focus {
+            border-color: var(--primary-color);
+        }
+
+        .chat-input-area button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 0 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .chat-input-area button:hover {
+            background-color: var(--primary-hover);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="chat-container">
+        <div class="chat-header">
+            <h1>CodeAlpha Support Bot</h1>
+            <p>Ask me about your AI Internship Program</p>
+        </div>
+
+        <div class="chat-messages" id="chatMessages">
+            <div class="message bot">
+                Hello! Welcome to CodeAlpha. I am your AI assistant here to help you with FAQ queries regarding your internship domain, criteria, and submissions. Ask me anything!
+            </div>
+        </div>
+
+        <div class="typing-indicator" id="typingIndicator">
+            <div class="dots">
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+            </div>
+        </div>
+
+        <div class="chat-input-area">
+            <input type="text" id="userInput" placeholder="Type your question here..." autocomplete="off">
+            <button id="sendBtn">Send</button>
+        </div>
+    </div>
+
+    <script>
+        // 1. Pre-defined Knowledge Base (Structured FAQ Dataset)
+        const faqDataset = [
+            {
+                question: "What are the perks of the CodeAlpha internship?",
+                answer: "The internship perks include an Internship Offer Letter, a QR Verified Completion Certificate with a Unique ID, a Performance-based Letter of Recommendation, Job Opportunities/Placement Support, and Resume Building Support.",
+                keywords: ["perk", "benefit", "offer letter", "certificate", "recommendation", "placement", "resume"]
+            },
+            {
+                question: "What are the completion criteria for the internship?",
+                answer: "To secure your completion certificate, you must complete and submit a minimum of 2 or 3 tasks from your specified domain. Submitting only one task is considered incomplete.",
+                keywords: ["criteria", "eligible", "complete", "pass", "minimum", "how many", "tasks"]
+            },
+            {
+                question: "Where and how should I submit my completed tasks?",
+                answer: "You must upload your source code to GitHub in a public repository named exactly 'CodeAlpha_ProjectName'. Then, share a short video explanation on LinkedIn tagging @CodeAlpha, and submit your links using the unique submission form shared in your WhatsApp group.",
+                keywords: ["submit", "submission", "link", "where", "how", "form", "whatsapp"]
+            },
+            {
+                question: "What is the official contact information for CodeAlpha?",
+                answer: "You can reach CodeAlpha via their website (www.codealpha.tech), via WhatsApp at +91 9336576683, or via email at services@codealpha.tech or services.codealpha@gmail.com.",
+                keywords: ["contact", "email", "phone", "whatsapp", "number", "support", "help", "website"]
+            },
+            {
+                question: "What projects or tasks are listed in the Artificial Intelligence domain?",
+                answer: "The AI domain contains 4 tasks: Task 1 (Language Translation Tool), Task 2 (Chatbot for FAQs), Task 3 (Music Generation with AI), and Task 4 (Object Detection and Tracking).",
+                keywords: ["tasks", "projects", "list", "ai", "artificial intelligence", "domain", "options"]
+            }
+        ];
+
+        const chatMessages = document.getElementById('chatMessages');
+        const userInput = document.getElementById('userInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const typingIndicator = document.getElementById('typingIndicator');
+
+        // 2. Text Preprocessing (Tokenization & Cleaning)
+        function preprocessText(text) {
+            return text.toLowerCase()
+                       .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?]/g, "")
+                       .split(/\s+/)
+                       .filter(word => word.length > 2); // Filter basic stop-words/short characters
+        }
+
+        // 3. Mathematical Vector Construction & Cosine Similarity Matcher
+        function calculateCosineSimilarity(userQuery, faqItem) {
+            const tokensUser = preprocessText(userQuery);
+            const tokensFAQ = preprocessText(faqItem.question).concat(faqItem.keywords);
+
+            // Create a unified vocabulary tracking space
+            const vocabulary = Array.from(new Set([...tokensUser, ...tokensFAQ]));
+
+            // Build Frequency Vector Spaces
+            const vectorUser = vocabulary.map(word => tokensUser.filter(w => w === word).length);
+            const vectorFAQ = vocabulary.map(word => tokensFAQ.filter(w => w === word).length);
+
+            // Calculate Dot Product & Magnitude Vectors
+            let dotProduct = 0;
+            let magnitudeUser = 0;
+            let magnitudeFAQ = 0;
+
+            for (let i = 0; i < vocabulary.length; i++) {
+                dotProduct += vectorUser[i] * vectorFAQ[i];
+                magnitudeUser += vectorUser[i] * vectorUser[i];
+                magnitudeFAQ += vectorFAQ[i] * vectorFAQ[i];
+            }
+
+            magnitudeUser = Math.sqrt(magnitudeUser);
+            magnitudeFAQ = Math.sqrt(magnitudeFAQ);
+
+            if (magnitudeUser === 0 || magnitudeFAQ === 0) return 0;
+            
+            return dotProduct / (magnitudeUser * magnitudeFAQ);
+        }
+
+        // 4. Intent Router & Match Finder
+        function findBestAnswer(userQuery) {
+            let bestMatchIndex = -1;
+            let highestSimilarityScore = 0;
+            const threshold = 0.20; // Confidence score hurdle
+
+            faqDataset.forEach((faqItem, index) => {
+                const score = calculateCosineSimilarity(userQuery, faqItem);
+                if (score > highestSimilarityScore) {
+                    highestSimilarityScore = score;
+                    bestMatchIndex = index;
+                }
+            });
+
+            if (highestSimilarityScore >= threshold) {
+                return faqDataset[bestMatchIndex].answer;
+            } else {
+                return "I'm sorry, I couldn't find a close matching question in my current FAQ database regarding your query. Please check your spelling, try rephrasing, or reach out to our WhatsApp support team at +91 9336576683.";
+            }
+        }
+
+        // UI Manipulation Handlers
+        function appendMessage(text, sender) {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message', sender);
+            messageDiv.textContent = text;
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function handleMessageSubmit() {
+            const query = userInput.value.trim();
+            if (!query) return;
+
+            appendMessage(query, 'user');
+            userInput.value = '';
+
+            // Render a natural delay simulating automated AI matching pipelines
+            typingIndicator.style.display = 'block';
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+
+            setTimeout(() => {
+                typingIndicator.style.display = 'none';
+                const botResponse = findBestAnswer(query);
+                appendMessage(botResponse, 'bot');
+            }, 800);
+        }
+
+        sendBtn.addEventListener('click', handleMessageSubmit);
+        userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') handleMessageSubmit();
+        });
+    </script>
+</body>
+</html>
